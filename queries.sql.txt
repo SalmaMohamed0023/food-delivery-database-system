@@ -1,0 +1,167 @@
+CREATE DATABASE food_delivery_new;
+USE food_delivery_new;
+
+CREATE TABLE Customer (
+    customerID INT PRIMARY KEY ,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15) NOT NULL
+);
+
+CREATE TABLE Address (
+    addressID INT PRIMARY KEY ,
+    city VARCHAR(50) NOT NULL,
+    street VARCHAR(150) NOT NULL,
+    buildingNo VARCHAR(20) NOT NULL,
+    customerID INT NOT NULL,
+    FOREIGN KEY (customerID) REFERENCES Customer(customerID) ON DELETE CASCADE
+);
+
+CREATE TABLE Restaurant (
+    restaurantID INT PRIMARY KEY ,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(200) NOT NULL,
+    phone VARCHAR(15) NOT NULL
+);
+
+CREATE TABLE Menu (
+    menuID INT PRIMARY KEY ,
+    name VARCHAR(50) NOT NULL,
+    restaurantID INT NOT NULL,
+    FOREIGN KEY (restaurantID) REFERENCES Restaurant(restaurantID) ON DELETE CASCADE
+);
+
+CREATE TABLE FoodItem (
+    foodID INT PRIMARY KEY ,
+    price NUMERIC(6,2) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(200),
+    menuID INT NOT NULL,
+    FOREIGN KEY (menuID) REFERENCES Menu(menuID) ON DELETE CASCADE
+);
+
+CREATE TABLE DeliveryDriver (
+    driverID INT PRIMARY KEY ,
+    phone VARCHAR(15) NOT NULL,
+    vehicleType VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Orders (
+    orderID INT PRIMARY KEY ,
+    orderDate DATE NOT NULL,
+    totalPrice NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    customerID INT NOT NULL,
+    driverID INT,
+    restaurantID INT NOT NULL,
+    FOREIGN KEY (customerID) REFERENCES Customer(customerID),
+    FOREIGN KEY (driverID) REFERENCES DeliveryDriver(driverID),
+    FOREIGN KEY (restaurantID) REFERENCES Restaurant(restaurantID)
+);
+
+CREATE TABLE OrderPayment (
+    paymentID INT PRIMARY KEY ,
+    method VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    amount NUMERIC(12,2) NOT NULL,
+    paymentDate DATE NOT NULL,
+    orderID INT NOT NULL,
+    FOREIGN KEY (orderID) REFERENCES Orders (orderID) ON DELETE CASCADE
+);
+
+CREATE TABLE OrderItem (
+    orderID INT NOT NULL,
+    foodID INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unitPrice NUMERIC(10,2) NOT NULL,
+    PRIMARY KEY (orderID, foodID),
+    FOREIGN KEY (orderID) REFERENCES Orders (orderID) ON DELETE CASCADE,
+    FOREIGN KEY (foodID) REFERENCES FoodItem(foodID)
+);
+
+
+-- 1. Customers
+INSERT INTO Customer (customerID,name, email, phone) VALUES
+(1,'Salma Ahmed', 'salma@example.com', '01012345678'),
+(2,'Mohamed Ali', 'mohamed@example.com', '01198765432'),
+(3,'Fatma Hassan', 'fatma@example.com', '01234567890');
+
+-- 2. Addresses
+INSERT INTO Address (addressID,city, street, buildingNo, customerID) VALUES
+(1,'Giza', 'El Haram St', '45', 1),
+(2,'Cairo', 'Tahrir Sq', '12B', 1),  
+(3,'Alexandria', 'Corniche Rd', '78', 2),
+(4,'Cairo', 'Nasr City', '30', 3);
+
+-- 3. Restaurants
+INSERT INTO Restaurant (restaurantID,name, location, phone) VALUES
+(1,'KFC', 'Mohandseen, Giza', '0223456789'),
+(2,'McDonalds', 'Maadi, Cairo', '0223456780'),
+(3,'Pizza Hut', 'Nasr City, Cairo', '0223456790');
+
+-- 4. Menus
+INSERT INTO Menu (menuID,name, restaurantID) VALUES
+(1,'Main Menu', 1),
+(2,'Breakfast Menu', 2),
+(3,'Pizza Menu', 3);
+
+-- 5. FoodItems
+INSERT INTO FoodItem (foodID,price, name, description, menuID) VALUES
+(1,85.00, 'Zinger Burger', 'Spicy chicken burger with lettuce', 1),
+(2,45.00, 'Fries', 'Crispy french fries', 1),
+(3,120.00, 'Big Mac', 'Classic beef burger', 2),
+(4,99.00, 'Margherita Pizza', 'Classic cheese pizza', 3),
+(5,135.00, 'Pepperoni Pizza', 'Pepperoni and cheese pizza', 3);
+
+-- 6. DeliveryDrivers
+INSERT INTO DeliveryDriver (driverID,phone, vehicleType, name) VALUES
+(1,'01555555555', 'Motorcycle', 'Ahmed Khaled'),
+(2,'01555555556', 'Car', 'Omar Saleh'),
+(3,'01555555557', 'Motorcycle', 'Khaled Mahmoud');
+
+-- 7. Orders
+INSERT INTO Orders (orderID,orderDate, totalPrice, status, customerID, driverID, restaurantID) VALUES
+(1,'2026-01-09', 130.00, 'Delivered', 1, 1, 1),   -- Salma ordered from KFC, delivered by Ahmed
+(2,'2026-01-09', 165.00, 'On The Way', 2, 2, 2),  -- Mohamed ordered from McDonalds
+(3,'2026-01-10', 234.00, 'Pending', 1, NULL, 3);  -- Salma ordered from Pizza Hut, no driver yet
+
+-- 8. OrderItems
+INSERT INTO OrderItem (orderID, foodID, quantity, unitPrice) VALUES
+(1, 1, 1, 85.00),   -- Zinger
+(1, 2, 1, 45.00),   -- Fries
+(2, 3, 1, 120.00),  -- Big Mac
+(2, 2, 1, 45.00),   -- Fries
+(3, 4, 1, 99.00),   -- Margherita
+(3, 5, 1, 135.00);  -- Pepperoni
+
+-- 9. OrderPayments
+INSERT INTO OrderPayment (paymentID,method, status, amount, paymentDate, orderID) VALUES
+(1,'Credit Card', 'Paid', 130.00, '2026-01-09', 1),
+(2,'Cash', 'Paid', 165.00, '2026-01-09', 2),
+(3,'Mobile Wallet', 'Pending', 234.00, '2026-01-10', 3);
+
+
+SELECT * FROM Customer;
+SELECT * FROM Orders;
+SELECT * FROM OrderItem;
+
+
+--example
+-- 1. 
+SELECT o.orderID, o.orderDate, o.totalPrice, o.status, r.name AS restaurant
+FROM Orders o
+JOIN Restaurant r ON o.restaurantID = r.restaurantID
+WHERE o.customerID = 1;
+
+-- 2. 
+SELECT oi.quantity, f.name, oi.unitPrice, (oi.quantity * oi.unitPrice) AS subtotal
+FROM OrderItem oi
+JOIN FoodItem f ON oi.foodID = f.foodID
+WHERE oi.orderID = 1;
+
+-- 3. 
+SELECT r.name, SUM(o.totalPrice) AS total_sales
+FROM Orders o
+JOIN Restaurant r ON o.restaurantID = r.restaurantID
+GROUP BY r.name;
