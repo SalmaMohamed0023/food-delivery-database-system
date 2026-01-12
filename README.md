@@ -21,6 +21,10 @@ It covers the full database development process starting from conceptual design 
   - Select queries
   - Joins
   - Constraints
+  
+  ## SQL Implementation Video
+You can watch the SQL implementation demo here:
+[Watch the SQL Demo Video](https://drive.google.com/file/d/1bdO3sovX-JYyAlQASMkzINwp6DiYKnDp/view?usp=sharing)
 
 ## Tools Used
 - MySQL / SQL
